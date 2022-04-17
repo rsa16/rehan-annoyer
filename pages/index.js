@@ -72,7 +72,7 @@ export default function Home() {
     if (wsInstance.readyState === wsInstance.OPEN) {
       wsInstance.send(message);
     } else {
-      updateWs("ws://localhost:8080");
+      updateWs("ws://10.0.0.64:8080");
     }
   }
   return (
