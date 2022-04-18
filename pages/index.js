@@ -56,7 +56,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isBrowser) {
-      const ws = new WebSocket("ws://10.0.0.64:8080");
+      const ws = new WebSocket("wss://ws.ralexa.tk/");
       setWsInstance(ws);
     }
 
@@ -72,7 +72,7 @@ export default function Home() {
     if (wsInstance.readyState === wsInstance.OPEN) {
       wsInstance.send(message);
     } else {
-      updateWs("ws://10.0.0.64:8080");
+      updateWs("wss://ws.ralexa.tk/");
     }
   }
   return (
@@ -83,7 +83,7 @@ export default function Home() {
       </Head>
       <form onSubmit={annoy} className="">
         <motion.h1 variants={title} className="text-center text-6xl font-bold text-blue-600">Annoy Rehan</motion.h1>
-        <motion.p variants={title} className="text-center mt-3 text-gray-500">This is the worst idea I've ever had. (Check About Page)</motion.p>
+        <motion.p variants={title} className="text-center mt-3 text-gray-500">This is the worst idea I&apos;ve ever had. (Check About Page)</motion.p>
         <motion.input variants={title} onChange={(e) => setMessage(e.target.value)} value={message} type="text" className="focus:ring-indigo-500 mt-1 text-center focus:border-indigo-500 block border-gray-300 rounded-md box-width mb-5"/>
         <motion.button variants={fade} type="submit" className="center rounded-md sm:w-32 w-16 sm:h-10 h-8 sm:text-base text-sm text-white transition duration-300 bg-blue-600 hover:bg-blue-800">Annoy</motion.button>
       </form>

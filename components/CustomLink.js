@@ -8,7 +8,7 @@ export default function CustomLink(props) {
     extraClasses
   );
   return (
-    <Link href={href}>
+    <Link href={href} passHref>
       <motion.a variants={variants} className={classes}>
         {text}
       </motion.a>
