@@ -5,13 +5,28 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/router'
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { Loading } from 'notiflix/build/notiflix-loading-aio';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHourglass } from '@fortawesome/free-solid-svg-icons';
 
 export default function Home() {
-  const server = "wss://ws.ralexa.tk";
-  const isBrowser = typeof window !== "undefined";
+  // const server = "wss://ws.ralexa.tk";
+  const server = "ws://10.0.0.11:8080";
+	const isBrowser = typeof window !== "undefined";
   const [wsInstance, setWsInstance] = useState(null);
   const [message, setMessage] = useState("");
   const router = useRouter();
+
+	const [seconds, setSeconds] = React.useState(30);
+
+	// Rate limit stuff
+	// Milliseconds because programming is weird like that
+	const timeout = 30*1000
+	const maxSubmits = 10;
+	const intervalMilliseconds = 10*1000;
+	const [disabled, setDisabled] = useState(false);
+
+	var timesSubmitted = 0;
+	var timerFunction;
 
   useEffect(() => {
     Notify.init({
@@ -23,6 +38,13 @@ export default function Home() {
     Loading.init({ svgColor: '#2564eb' });
   })
 
+	useEffect(() => {
+		if (disabled) {
+			if (seconds > 0) {
+				setTimeout(() => setSeconds(seconds - 1), 1000);
+			}
+		}
+	});
   useEffect(() => {
     if (isBrowser) {
       let isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -125,11 +147,34 @@ export default function Home() {
 
   async function annoy(e) {
     let username = localStorage.getItem("username");
-
-    e.preventDefault();
+    
+		e.preventDefault();
     // If the instance is open, send message, otherwise, reinitialize instance
     if (wsInstance.readyState === wsInstance.OPEN) {
-      wsInstance.send(username + ":" + " " + message);
+			if (!timerFunction) {
+				timerFunction = setTimeout(() => {
+					timerFunction = undefined;
+					timesSubmitted = 0;
+					console.log("RATE LIMIT TIMER RESET");
+				}, intervalMilliseconds);
+			}
+
+			timesSubmitted ++;
+			if (timesSubmitted > maxSubmits) {
+				Notify.failure("You have sent too many messages at once. Please wait 30 seconds before you can submit again", {
+					timeout: 30*1000
+				});
+				timesSubmitted = 0;
+				setDisabled(true);
+				setSeconds(30);
+
+				setTimeout(() => {
+					setDisabled(false);
+					Notify.info("You are allowed to send messages again!");
+				}, timeout);
+			} else {
+				wsInstance.send(username + ":" + " " + message);
+			}
       Loading.dots();
       await new Promise(resolve => setTimeout(resolve, 700));
       Loading.remove();
@@ -142,16 +187,23 @@ export default function Home() {
     }
   }
   return (
-    <motion.div initial="initial" animate="animate" exit="exit" variants={content} className="flex h-screen justify-center items-center">
-      <Head>
+		<motion.div initial="initial" animate="animate" exit="exit" variants={content} className="flex h-screen justify-center items-center">
+			<Head>
         <title>Ralexa</title>
         <meta name="description" content="Annoy Rehan by making his speaker say anything you want" />
       </Head>
-      <form onSubmit={annoy} className="">
+			
+			<div className={`flex flex-row absolute top-0 mt-6 transition duration-300 ${disabled ? "opacity-100" : "opacity-0"}`}>
+				<FontAwesomeIcon className="mt-1 top-0 text-blue-500 " size="xl" icon={faHourglass} />
+				<span className="ml-2 text-xl">00</span>&nbsp;:&nbsp;
+				<span className="text-xl">00</span>&nbsp;:&nbsp;
+				<span className="text-xl">{seconds}</span>
+      </div>
+			<form onSubmit={annoy} className="">
         <motion.h1 variants={title} className="text-center text-6xl font-bold text-blue-600">Annoy Rehan</motion.h1>
         <motion.p variants={title} className="text-center mt-3 text-gray-500">This is the worst idea I&apos;ve ever had. (Check About Page)</motion.p>
-        <motion.input variants={title} onChange={(e) => setMessage(e.target.value)} value={message} type="text" className="cursor-text focus:ring-indigo-500 mt-1 text-center focus:border-indigo-500 block border-gray-300 rounded-md box-width mb-5"/>
-        <motion.button variants={fade} type="submit" className="center rounded-md sm:w-32 w-16 sm:h-10 h-8 sm:text-base text-sm text-white transition duration-300 bg-blue-600 hover:bg-blue-800">Annoy</motion.button>
+        <motion.input disabled={disabled} variants={title} onChange={(e) => setMessage(e.target.value)} value={message} type="text" className="cursor-text focus:ring-indigo-500 mt-1 text-center focus:border-indigo-500 block border-gray-300 rounded-md box-width mb-5"/>
+        <motion.button disabled={disabled} variants={fade} type="submit" className={`center rounded-md sm:w-32 w-16 sm:h-10 h-8 sm:text-base text-sm text-white transition duration-300 ${disabled ? "bg-zinc-400" : "bg-blue-600 hover:bg-blue-800"}`}>Annoy</motion.button>
       </form>
       <CustomLink variants={fade} href="/about" text="About This Project" extraClasses="absolute bottom-0 left-0 sm:mb-5 sm:ml-5 sm:text-base mb-3 ml-3 text-sm"/>
     </motion.div>
