@@ -21,8 +21,8 @@ export default function Home() {
 	// Rate limit stuff
 	// Milliseconds because programming is weird like that
 	const timeout = 30*1000
-	const maxSubmits = 10;
-	const intervalMilliseconds = 10*1000;
+	const maxSubmits = 5;
+	const intervalMilliseconds = 5*1000;
 	const [disabled, setDisabled] = useState(false);
 
 	var timesSubmitted = 0;
