@@ -9,8 +9,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHourglass } from '@fortawesome/free-solid-svg-icons';
 
 export default function Home() {
-  // const server = "wss://ws.ralexa.tk";
-  const server = "ws://10.0.0.11:8080";
+  const server = "wss://ws.ralexa.tk";
+  // const server = "ws://10.0.0.11:8080";
 	const isBrowser = typeof window !== "undefined";
   const [wsInstance, setWsInstance] = useState(null);
   const [message, setMessage] = useState("");
