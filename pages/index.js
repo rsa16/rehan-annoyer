@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 import { Notify } from "notiflix/build/notiflix-notify-aio";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
+import { Report } from "notiflix/build/notiflix-report-aio";	
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHourglass } from "@fortawesome/free-solid-svg-icons";
 
@@ -17,16 +18,37 @@ export default function Home() {
   const router = useRouter();
 
   const [seconds, setSeconds] = React.useState(30);
-
+		
   // Rate limit stuff
   // Milliseconds because programming is weird like that
   const timeout = 30 * 1000;
   const maxSubmits = 5;
   const intervalMilliseconds = 10 * 1000;
   const [disabled, setDisabled] = useState(false);
+  const characterLimit = 500;
 
   var timesSubmitted = 0;
   var timerFunction;
+  var [overCharLimit, setIsOverLimit] = useState(false);
+
+  const [flash, setFlash] = useState(false);
+
+  const flashFunc = () => {
+    if (flash === false) {
+      setFlash(true);
+    } else if (flash === true) {
+      setFlash(false);
+    }
+  }
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      flashFunc();
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  });
+
 
   useEffect(() => {
     Notify.init({
@@ -91,6 +113,15 @@ export default function Home() {
     },
   };
 
+  const handleChange = (e) => {
+    if (e.target.value.length >= characterLimit) {
+      setIsOverLimit(true);
+    } else {
+      setMessage(e.target.value)
+      setIsOverLimit(false);
+    }
+  }
+
   // Function to call when creating new connection
   const updateWs = useCallback(
     (url) => {
@@ -106,6 +137,7 @@ export default function Home() {
 
       const newWs = new WebSocket(url);
       newWs.onerror = function (event) {
+        console.log(event)
         Notify.failure(
           "Connection failed. Plese try again later, Rehan is unreachable at the moment"
         );
@@ -125,6 +157,7 @@ export default function Home() {
       };
 
       ws.onerror = function (event) {
+        console.log(event)
         Notify.failure(
           "Connection failed. Please try again later, Rehan is unreachable at the moment"
         );
@@ -154,9 +187,11 @@ export default function Home() {
       }
 
       timesSubmitted++;
-      if (timesSubmitted > maxSubmits) {
-        Notify.failure(
-          "You have sent too many messages at once. Please wait 30 seconds before you can submit again",
+      if (timesSubmitted >= maxSubmits) {
+        Report.warning(
+          "Spam Warning",
+          "You have sent too many messages at once. Please calm down and wait 30 seconds before you are allowed to send again.",
+          "Okay",
           {
             timeout: 30 * 1000,
           }
@@ -198,21 +233,6 @@ export default function Home() {
           content="Annoy Rehan by making his speaker say anything you want"
         />
       </Head>
-
-      <div
-        className={`flex flex-row absolute top-0 mt-6 transition duration-300 ${
-          disabled ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <FontAwesomeIcon
-          className="mt-1 top-0 text-blue-500 "
-          size="xl"
-          icon={faHourglass}
-        />
-        <span className="ml-2 text-xl">00</span>&nbsp;:&nbsp;
-        <span className="text-xl">00</span>&nbsp;:&nbsp;
-        <span className="text-xl">{seconds}</span>
-      </div>
       <form onSubmit={annoy} className="">
         <motion.h1
           variants={title}
@@ -223,13 +243,27 @@ export default function Home() {
         <motion.p variants={title} className="text-center mt-3 text-gray-500">
           This is the worst idea I&apos;ve ever had. (Check About Page)
         </motion.p>
+        <div
+          className={`flex flex-row transition-all duration-300 justify-center my-2 ${
+            disabled ? "opacity-100" : "absolute opacity-0"
+          }`}
+        >
+          <FontAwesomeIcon
+            className={`transition duration-500 mt-1 top-0 ${ flash ? "text-red-500": "text-blue-500"}`}
+            size="lg"
+            icon={faHourglass}
+          />
+          <span className="ml-2 text-lg">00</span>&nbsp;:&nbsp;
+          <span className="text-lg">00</span>&nbsp;:&nbsp;
+          <span className="text-lg">{seconds}</span>
+        </div>
         <motion.input
           disabled={disabled}
           variants={title}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleChange}
           value={message}
           type="text"
-          className="cursor-text focus:ring-indigo-500 mt-1 text-center focus:border-indigo-500 block border-gray-300 rounded-md box-width mb-5"
+          className={"cursor-text mt-1 mx-auto text-center block transition duration-300 border-gray-300 rounded-md box-width mb-3" + `${overCharLimit ? "border-red-600 ring-red-600" : ""}`}
         />
         <motion.button
           disabled={disabled}
